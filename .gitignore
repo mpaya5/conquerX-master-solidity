@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# macOS
+.DS_Store
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+logs/
+*.log
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+
+# Rust
+target/
+
+# Solidity artifacts and build files
+build/
+artifacts/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.idea/
+*.project
+*.classpath
+out/
+
+# Python environment variables
+.env
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Ignore system-specific files
+Thumbs.db
+Desktop.ini
+
+# Ignore backup and temporary files
+*.bak
+*.tmp
+*.swp
+
+# Dependency directories
+node_modules/
