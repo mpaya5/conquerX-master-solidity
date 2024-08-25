@@ -26,21 +26,27 @@ contract StudentsList {
         address studentIdentifier;
         string name;
         uint8 age;
+        bool exist;
     }
     // Each Student is associated to an address
     mapping (address => Student) private students;
     Student [] allStudents;
+
     // Create a new Student
     function addStudent (string memory _name, uint8 _age) public returns (bool success)
     {
-        students[msg.sender] = Student(msg.sender, _name, _age);
-        allStudents.push(students[msg.sender]);
-        return true;
+        if (!students[msg.sender].exist) {
+            students[msg.sender] = Student(msg.sender, _name, _age, true);
+            allStudents.push(students[msg.sender]);
+            return true;
+        }
     }
+
     // Get all the Student Data (just if the ones who execute the function is a student)
     function getOwnData() public view returns (Student memory) {
         return students[msg.sender];
     }
+    
     // Get all the students data
     function getAllData() public view returns (Student[] memory) {
         return allStudents;
