@@ -60,3 +60,13 @@ Desktop.ini
 
 # Dependency directories
 node_modules/
+
+# package
+package-lock.json
+package.json
+
+# Truffle
+truffle-config.js
+contracts
+migrations
+test
