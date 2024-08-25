@@ -65,8 +65,8 @@ node_modules/
 package-lock.json
 package.json
 
-# Truffle
-truffle-config.js
-contracts
-migrations
-test
+# Truffle-Solidity
+Solidity/truffle-config.js
+Solidity/contracts
+Solidity/migrations
+Solidity/test
