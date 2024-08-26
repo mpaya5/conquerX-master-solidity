@@ -28,6 +28,9 @@ contract Bank {
 
     mapping (address => BankAccount) private bank_accounts;
 
+    // Create an event
+    event Transfer (address _from, address _to, uint _amount);
+
     // Add balance to the caller's account
     function addBalance (uint8 _amount) public {
         bank_accounts[msg.sender].balance += _amount;
@@ -45,6 +48,7 @@ contract Bank {
         } else {
             bank_accounts[_sender].balance -= _amount;
             bank_accounts[_receiver].balance += _amount;
+            emit Transfer(_sender, _receiver, _amount);
         }
     }
 
