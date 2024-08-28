@@ -67,6 +67,3 @@ package.json
 
 # Truffle-Solidity
 Solidity/truffle-config.js
-Solidity/contracts
-Solidity/migrations
-Solidity/test
