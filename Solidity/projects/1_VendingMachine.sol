@@ -139,7 +139,7 @@ contract VendingMachine {
      * Requirements:
      * - The snack ID must be valid.
      * - The quantity must be greater than 0.
-     * - There must be sufficient quantity of the snack in stock.
+     * - There must be enough quantity of the snack in stock.
      * - The user must send enough Ether to cover the total cost.
      */
     function buySnack (uint32 _id, uint32 _amount) external payable {
