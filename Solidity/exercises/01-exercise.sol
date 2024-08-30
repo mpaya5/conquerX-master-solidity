@@ -21,46 +21,69 @@ pragma solidity >=0.7.0;
 pragma experimental ABIEncoderV2;
 
 contract StudentsList {
+    // Address of the contract owner
     address private owner;
-    // Represent a unique Student
-    struct Student {
-        address studentIdentifier;
-        string name;
-        uint8 age;
-        bool exist;
-    }
-    // Each Student is associated to an address
-    mapping (address => Student) private students;
-    Student [] allStudents;
 
+    // Structure representing a unique student
+    struct Student {
+        address studentIdentifier;  // Ethereum address of the student
+        string name;                // Name of the student
+        uint8 age;                  // Age of the student
+        bool exist;                 // Indicates if the student exists
+    }
+
+    // Mapping of student address to Student structure
+    mapping (address => Student) private students;
+
+    // Array to store all registered students
+    Student[] allStudents;
+
+    // Constructor to initialize the contract owner
     constructor() {
         owner = msg.sender;
     }
 
-    // Create a modifier
+    // Modifier to restrict access to only the owner
     modifier onlyOwner () {
-        require(msg.sender == owner, "You cannot access to this data");
+        require(msg.sender == owner, "You cannot access this data");
         _;
     }
 
-    // Create a new Student
-    function addStudent (string memory _name, uint8 _age, address _studentAddress) public returns (bool success)
-    {
-        require(bytes(_name).length != 0, "Error: Empty Name"); // Check name is not empty
-        require(_age > 0, "Error: Age cannot be negative");
-        if (!students[_studentAddress].exist) {
+    /**
+     * @dev Registers a new student.
+     * @param _name Name of the student.
+     * @param _age Age of the student.
+     * @param _studentAddress Ethereum address of the student.
+     * @return success Returns true if the student was successfully registered.
+     *
+     * Requirements:
+     * - The student's name cannot be empty.
+     * - The student's age must be greater than 0.
+     * - The student's address must not already be registered.
+     */
+    function addStudent (string memory _name, uint8 _age, address _studentAddress) public returns (bool success) {
+        require(bytes(_name).length != 0, "Error: Empty Name"); // Check that the name is not empty
+        require(_age > 0, "Error: Age cannot be negative"); // Check that the age is positive
+        if (!students[_studentAddress].exist) { // Ensure the student is not already registered
             students[_studentAddress] = Student(_studentAddress, _name, _age, true);
-            allStudents.push(students[_studentAddress]);
+            allStudents.push(students[_studentAddress]); // Add the student to the list
             return true;
         }
+        return false; // Return false if the student is already registered
     }
 
-    // Get all the Student Data (just if the ones who execute the function is a student)
+    /**
+     * @dev Retrieves the data of the student who calls this function.
+     * @return The student's data (name, age, and address).
+     */
     function getOwnData() public view returns (Student memory) {
         return students[msg.sender];
     }
-    
-    // Get all the students data
+
+    /**
+     * @dev Retrieves the data of all registered students. Only the owner can call this function.
+     * @return An array of all students.
+     */
     function getAllData() public view onlyOwner returns (Student[] memory) {
         return allStudents;
     }
