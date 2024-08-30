@@ -21,30 +21,50 @@ pragma solidity >=0.7.0;
 
 contract Bank {
 
+    // Structure representing a bank account
     struct BankAccount {
-        address owner;
-        uint256 balance;
+        address owner;       // The owner of the bank account
+        uint256 balance;     // The balance of the bank account in wei
     }
 
+    // Mapping to store bank accounts by address
     mapping (address => BankAccount) private bank_accounts;
 
-    // Create an event
-    event Transfer (address _from, address _to, uint _amount);
+    // Event to log transfers between accounts
+    event Transfer(address _from, address _to, uint _amount);
 
-    // Add balance to the caller's account
-    function addBalance (uint8 _amount) public {
+    /**
+     * @dev Adds balance to the caller's account.
+     * @param _amount The amount to add to the balance.
+     *
+     * Requirements:
+     * - The amount is added directly to the caller's account.
+     */
+    function addBalance(uint8 _amount) public {
         bank_accounts[msg.sender].balance += _amount;
     }
 
-    // Get the balance of the caller's account
+    /**
+     * @dev Returns the balance of the caller's account.
+     * @return The balance of the caller's account.
+     */
     function getBalance() public view returns (uint256) {
         return bank_accounts[msg.sender].balance;
     }
 
-    // Private function to handle balance transfer between accounts
+    /**
+     * @dev Private function to handle balance transfers between accounts.
+     * @param _sender The address of the account sending the balance.
+     * @param _receiver The address of the account receiving the balance.
+     * @param _amount The amount to transfer.
+     *
+     * Requirements:
+     * - The sender must have sufficient balance.
+     * - If the sender has insufficient balance, the function returns without making the transfer.
+     */
     function transferBalancePrivate(address _sender, address _receiver, uint256 _amount) private {
         if (bank_accounts[_sender].balance < _amount) {
-            return;
+            return; // Abort the transfer if the sender doesn't have enough balance
         } else {
             bank_accounts[_sender].balance -= _amount;
             bank_accounts[_receiver].balance += _amount;
@@ -52,7 +72,14 @@ contract Bank {
         }
     }
 
-    // Public function to initiate a balance transfer
+    /**
+     * @dev Public function to initiate a balance transfer.
+     * @param _receiver The address of the account receiving the balance.
+     * @param _amount The amount to transfer.
+     *
+     * Requirements:
+     * - Calls the internal function `transferBalancePrivate` to execute the transfer.
+     */
     function transferBalance(address _receiver, uint256 _amount) public {
         transferBalancePrivate(msg.sender, _receiver, _amount);
     }
