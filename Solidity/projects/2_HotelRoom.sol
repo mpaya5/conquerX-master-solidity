@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.20;
 
 /* 
 Simulate an Hotel Room functionality.The contract need to have:
@@ -16,36 +16,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HotelRoom is Ownable{
     // Define room Status
-    enum roomStatus {OCCUPIED, VACANT}
+    enum RoomStatus {OCCUPIED, VACANT}
 
-    // Structure to represent the room
-    struct Room {
-        uint32 id;
-        uint256 price;
-        roomStatus status;
-    }
-
-    // Define the room
-    Room public room;
+    // Define a public variable to fix the status;
+    RoomStatus public currentRoomStatus;
+    uint public roomPrice = 1 ether;
 
     // Define events
     event RoomOccupied(address _guest);
     event WithdrawDone(uint256 _amount);
 
     // Constructor to initialize the room
-    constructor () {
-        setRoom();
-    }
-
-    /**
-     * @dev Sets the room status to VACANT and defines the room's characteristics.
-     */
-    function setRoom () private {
-        room = Room({
-            id: 1,
-            price: 1*10**18, // Price in wei (1 ether)
-            status: roomStatus.VACANT
-        });
+    constructor(address initialOwner) Ownable(initialOwner) {
+        freeRoom();
     }
 
     /**
@@ -70,18 +53,28 @@ contract HotelRoom is Ownable{
      * - The user must send enough Ether to cover the total cost.
      * - The room must be VACANT to be occupied.
      */
-    function scheduleRoom () external payable {
-        require (msg.value >= room.price, "Insufficient value sent");
-        require (room.status == roomStatus.VACANT);
+    function bookRoom () external payable {
+        require (msg.value >= roomPrice, "Insufficient value sent");
+        require (currentRoomStatus == RoomStatus.VACANT, "The room is occupied");
 
-        room.status = roomStatus.OCCUPIED;
+        currentRoomStatus = RoomStatus.OCCUPIED;
 
         emit RoomOccupied(msg.sender);
 
-        if (msg.value > room.price) {
-            payable(msg.sender).transfer(msg.value - room.price);
+        if (msg.value > roomPrice) {
+            payable(msg.sender).transfer(msg.value - roomPrice);
         }
 
         withdrawBalance();
+    }
+
+    /**
+     * @dev Allows the owner to free the room and set it to VACANT.
+     * 
+     * Requirements:
+     * - Only the owner can free the room.
+     */
+    function freeRoom() public onlyOwner {       
+        currentRoomStatus = RoomStatus.VACANT;
     }
 }

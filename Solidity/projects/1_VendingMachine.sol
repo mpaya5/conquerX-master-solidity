@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.20;
 
 /* 
 Simulate a Vending Machine functionality:
@@ -37,7 +37,7 @@ contract VendingMachine is Ownable{
     event LogTotalCost(uint256 totalCost);
 
     // Constructor to initialize the owner as the contract deployer
-    constructor () {
+    constructor(address initialOwner) Ownable(initialOwner) {
         totalSnacks = 0;
     }
 
