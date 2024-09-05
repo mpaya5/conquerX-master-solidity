@@ -11,9 +11,8 @@ Simulate a Vending Machine functionality:
 
 */
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract VendingMachine is Ownable{
+contract VendingMachine{
+    address private owner;
     // Structure to represent a snack item
     struct Snack {
         uint32 id;          // Unique identifier for the snack
@@ -37,9 +36,20 @@ contract VendingMachine is Ownable{
     event LogTotalCost(uint256 totalCost);
 
     // Constructor to initialize the owner as the contract deployer
-    constructor(address initialOwner) Ownable(initialOwner) {
+    constructor() {
+        owner = msg.sender;
         totalSnacks = 0;
     }
+
+    /**
+     * @dev a modifier to just be able to interact with some funcitons the owner of the contract
+     *
+     */
+    modifier onlyOwner () {
+        require(msg.sender == owner, "You cannot access this data");
+        _;
+    }
+
 
     /**
      * @dev Returns all snacks available in the vending machine.
@@ -118,7 +128,7 @@ contract VendingMachine is Ownable{
     function withdrawBalance () external onlyOwner {
         uint256 balance_machine = address(this).balance;
         require(balance_machine > 0, "No balance to withdraw");
-        payable(owner()).transfer(balance_machine);
+        payable(owner).transfer(balance_machine);
 
         emit WithdrawDone(balance_machine);
     }

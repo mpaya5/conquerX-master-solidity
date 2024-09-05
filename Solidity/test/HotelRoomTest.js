@@ -5,14 +5,14 @@ contract("HotelRoom", (accounts) => {
     const client = accounts[1];
 
     it("should be the room with status vacant", async () => {
-        const instance = await HotelRoom.new(owner);
+        const instance = await HotelRoom.deployed();
         const currentRoomStatus = await instance.currentRoomStatus();
 
         assert.equal(currentRoomStatus.toString(), '1', "The room should be VACANT (1)");
     });
 
     it("should book the room and withdraw the balance", async () => {
-        const instance = await HotelRoom.new(owner);
+        const instance = await HotelRoom.deployed();
         const initialOwnerBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
 
         await instance.bookRoom({ from: client, value: web3.utils.toWei("1", "ether") });

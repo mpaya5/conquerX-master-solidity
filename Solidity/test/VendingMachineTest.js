@@ -5,7 +5,7 @@ contract("VendingMachine", (accounts) => {
   const buyer = accounts[1];
 
   it("should add a new snack", async () => {
-    const instance = await VendingMachine.new(owner);
+    const instance = await VendingMachine.deployed();
     await instance.addSnack("Chips", 100, 1, { from: owner });
 
     const snacks = await instance.getAllSnacks();
@@ -15,7 +15,7 @@ contract("VendingMachine", (accounts) => {
   });
 
   it("should not allow non-owner to add a snack", async () => {
-    const instance = await VendingMachine.new(owner);
+    const instance = await VendingMachine.deployed();
     try {
       await instance.addSnack("Soda", 100, 1, { from: buyer });
 
@@ -26,7 +26,7 @@ contract("VendingMachine", (accounts) => {
   });
 
   it("should restock an existing snack", async () => {
-    const instance = await VendingMachine.new(owner);
+    const instance = await VendingMachine.deployed();
     await instance.restockSnack(0, 50, { from: owner });
 
     const snacks = await instance.getAllSnacks();
@@ -35,7 +35,7 @@ contract("VendingMachine", (accounts) => {
   });
 
   it("should allow a user to buy a snack", async () => {
-    const instance = await VendingMachine.new(owner);
+    const instance = await VendingMachine.deployed();
     const initialOwnerBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
 
     const contractBalanceBefore = new web3.utils.BN(await web3.eth.getBalance(instance.address));
@@ -58,7 +58,7 @@ contract("VendingMachine", (accounts) => {
   });
 
   it("should allow the owner to withdraw the balance", async () => {
-    const instance = await VendingMachine.new(owner);
+    const instance = await VendingMachine.deployed();
     const initialBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
 
     await instance.withdrawBalance({ from: owner });

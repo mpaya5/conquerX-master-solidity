@@ -12,9 +12,9 @@ Simulate an Hotel Room functionality.The contract need to have:
 5.  To be able to pay for and occupy the room, the room must be in a vacant state.
 */
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract HotelRoom is Ownable{
+contract HotelRoom {
+    address private owner;
     // Define room Status
     enum RoomStatus {OCCUPIED, VACANT}
 
@@ -27,8 +27,18 @@ contract HotelRoom is Ownable{
     event WithdrawDone(uint256 _amount);
 
     // Constructor to initialize the room
-    constructor(address initialOwner) Ownable(initialOwner) {
+    constructor() {
+        owner = msg.sender;
         freeRoom();
+    }
+
+    /**
+     * @dev a modifier to just be able to interact with some funcitons the owner of the contract
+     *
+     */
+     modifier onlyOwner () {
+        require(msg.sender == owner, "You cannot access this data");
+        _;
     }
 
     /**
@@ -41,7 +51,7 @@ contract HotelRoom is Ownable{
         uint256 balanceContract = address(this).balance;
         require(balanceContract > 0, "No balance to withdraw");
 
-        payable(owner()).transfer(balanceContract);
+        payable(owner).transfer(balanceContract);
 
         emit WithdrawDone(balanceContract);
     }
