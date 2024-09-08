@@ -1,8 +1,9 @@
+const { expect } = require('chai');
+
 const VendingMachine = artifacts.require("VendingMachine");
 
 contract("VendingMachine", (accounts) => {
-  const owner = accounts[0];
-  const buyer = accounts[1];
+  const [owner, buyer] = accounts;
 
   it("should add a new snack", async () => {
     const instance = await VendingMachine.deployed();
@@ -18,12 +19,13 @@ contract("VendingMachine", (accounts) => {
     const instance = await VendingMachine.deployed();
     try {
       await instance.addSnack("Soda", 100, 1, { from: buyer });
-
+  
       assert.fail("Non-owner should not be able to add a snack");
     } catch (error) {
-      assert(error.message.includes("Just the owner can execute this function."));
+      assert(error.message.includes("You cannot access this data"), "Incorrect error message");
     }
   });
+  
 
   it("should restock an existing snack", async () => {
     const instance = await VendingMachine.deployed();

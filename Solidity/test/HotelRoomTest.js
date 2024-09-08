@@ -1,8 +1,9 @@
+const { expect } = require('chai');
+
 const HotelRoom = artifacts.require('HotelRoom');
 
 contract("HotelRoom", (accounts) => {
-    const owner = accounts[0];
-    const client = accounts[1];
+    const [owner, client] = accounts;
 
     it("should be the room with status vacant", async () => {
         const instance = await HotelRoom.deployed();

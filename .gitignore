@@ -63,7 +63,4 @@ node_modules/
 
 # package
 package-lock.json
-package.json
 
-# Truffle-Solidity
-Solidity/truffle-config.js
