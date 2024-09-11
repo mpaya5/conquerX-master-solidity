@@ -57,10 +57,3 @@ Desktop.ini
 *.bak
 *.tmp
 *.swp
-
-# Dependency directories
-node_modules/
-
-# package
-package-lock.json
-
