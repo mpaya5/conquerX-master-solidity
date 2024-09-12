@@ -33,17 +33,19 @@ contract TokenSale {
 
     /**
      * @dev Allows users to purchase tokens by sending Ether.
+     * @param _amount The ammount that the user wants to buy
      * The number of tokens received is calculated based on the amount of Ether sent.
      * Requirements:
      * - The amount of Ether sent must be equal to or greater than the token price.
      */
-    function purchase() public payable {
-        require(msg.value >= tokenPrice, "Not enough money");
+    function purchase(uint _amount) public payable {
+        require(msg.value >= tokenPrice*_amount, "Not enough money");
 
-        // Calculate the number of tokens to transfer based on the amount of Ether sent
-        uint256 tokensToTransfer = msg.value / tokenPrice;
-
-        // Transfer the calculated amount of tokens to the buyer
-        token.transfer(msg.sender, tokensToTransfer * 10 ** token.decimals());
+        // Calculate the amount we need to return
+        uint256 remainder = msg.value - tokenPrice*_amount;
+        // Transfer the amount of tokens to the buyer
+        token.transfer(msg.sender, _amount * 10 ** token.decimals());
+        // Return the amount exceeded
+        payable(msg.sender).transfer(remainder);
     }
 }

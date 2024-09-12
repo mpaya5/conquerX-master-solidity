@@ -47,7 +47,7 @@ contract('ConquerToken and TokenSale', (accounts) => {
     const saleBalance = await this.token.balanceOf(this.tokenSale.address);
     console.log(`TokenSale contract balance: ${saleBalance.toString()} CNQT`);
   
-    await this.tokenSale.purchase({ from: buyer, value: ether('1') });
+    await this.tokenSale.purchase(1,{ from: buyer, value: ether('1') });
   
     const buyerBalance = await this.token.balanceOf(buyer);
     console.log(`Buyer's token balance: ${buyerBalance.toString()} CNQT`);
@@ -56,7 +56,7 @@ contract('ConquerToken and TokenSale', (accounts) => {
 
   it('should revert purchase if not enough Ether is sent', async function () {
     await expectRevert(
-      this.tokenSale.purchase({ from: buyer, value: ether('0.5') }),
+      this.tokenSale.purchase(1,{ from: buyer, value: ether('0.5') }),
       'Not enough money'
     );
   });

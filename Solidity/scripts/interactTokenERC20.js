@@ -14,7 +14,7 @@ module.exports = async function(callback) {
     console.log(`Owner's token balance: ${web3.utils.fromWei(ownerBalance, 'ether')} CNQT`);
 
     console.log('Buyer is purchasing tokens...');
-    await tokenSaleInstance.purchase({ from: buyer, value: web3.utils.toWei('1', 'ether') });
+    await tokenSaleInstance.purchase(1,{ from: buyer, value: web3.utils.toWei('1', 'ether') });
 
     let buyerBalance = await tokenInstance.balanceOf(buyer);
     console.log(`Buyer's token balance: ${web3.utils.fromWei(buyerBalance, 'ether')} CNQT`);
