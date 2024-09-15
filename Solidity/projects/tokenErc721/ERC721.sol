@@ -10,13 +10,14 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 
 /**
  * @title ERC721 Standard Non-Fungible Token Implementation
  * @dev Implements the ERC721 standard, including metadata and safe transfer functions.
  */
- contract ERC721 is ERC165, IERC721, IERC721Metadata, Context {
+abstract contract ERC721 is ERC165, IERC721, IERC721Metadata, Context, IERC721Errors {
     using Address for address;
     using Strings for uint256;
 
@@ -314,24 +315,25 @@ import "@openzeppelin/contracts/utils/Address.sol";
      * @param to The new owner.
      * @param tokenId The token ID being transferred.
      * @param data Additional data to pass to the receiver contract.
-     * @return True if the contract implements `onERC721Received`, otherwise false.
+     * @return success if the contract implements `onERC721Received`, otherwise false.
      */
-     function _checkOnErc721Received(address from, address to, uint256 tokenId, bytes memory data) private returns (bool) {
-        if (to.isContract()) { 
-            try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
+     function _checkOnErc721Received(address from, address to, uint256 tokenId, bytes memory data) private returns (bool success) {
+        if (to.code.length > 0) {
+            try IERC721Receiver(to).onERC721Received(from, from, tokenId, data) returns (bytes4 retval) {
+                if (retval != IERC721Receiver.onERC721Received.selector) {
+                    // Token rejected
+                    revert IERC721Errors.ERC721InvalidReceiver(to);
+                }
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                    // non-IERC721Receiver implementer
+                    revert IERC721Errors.ERC721InvalidReceiver(to);
                 } else {
-                    /// @solidity memory-safe-assembly
-                    assembly {
-                        revert(add(reason, 32), mload(reason))
+                    assembly ("memory-safe") {
+                        revert(add(32, reason), mload(reason))
                     }
                 }
             }
-        } else {
-            return true;
         }
     }
 
