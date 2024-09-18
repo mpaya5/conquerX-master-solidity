@@ -52,4 +52,8 @@ inventory = [
     {"code": 8, "quantity": 785}
 ]
 
-print(main(inventory, 4))
+assert(main(inventory, 4) == 456)
+assert(main(inventory, 7) == 665)
+assert(main(inventory, 2) == 2312)
+
+print("All tests passed!")

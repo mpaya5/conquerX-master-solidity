@@ -26,6 +26,7 @@ Towers of Hanoi:
     Move disk from tower A to tower C
     Move disk from tower B to tower C
 """
+import io, sys
 
 def main(n: int):
     def torres_de_hanoi(n: int, origen: str, destiny: str, auxiliar: str):
@@ -45,5 +46,32 @@ def main(n: int):
 
     torres_de_hanoi(n, origen, destiny, auxiliar)
 
+def test_hanoi(n: int, expected_output: str):
+    captured_output = io.StringIO()
+    sys.stdout = captured_output
+    main(n)
+    sys.stdout = sys.__stdout__
 
-main(5)
+    output = captured_output.getvalue()
+    assert output == expected_output, f"Expected:\n{expected_output}\nGot:\n{output}"
+
+
+# Test case for 2 disks
+expected_output_2 = """Move disk 1 from tower A to tower B
+Move disk 2 from tower A to tower C
+Move disk 1 from tower B to tower C
+"""
+test_hanoi(2, expected_output_2)
+
+# Test case for 3 disks
+expected_output_3 = """Move disk 1 from tower A to tower C
+Move disk 2 from tower A to tower B
+Move disk 1 from tower C to tower B
+Move disk 3 from tower A to tower C
+Move disk 1 from tower B to tower A
+Move disk 2 from tower B to tower C
+Move disk 1 from tower A to tower C
+"""
+test_hanoi(3, expected_output_3)
+
+print("All tests passed!")
