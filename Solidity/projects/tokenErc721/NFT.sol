@@ -21,7 +21,6 @@ contract NFT is ERC721, Ownable {
         uint256 id;    // Unique identifier for the NFT
         uint8 level;   // Current level of the NFT
         uint8 rarity;  // Rarity value (randomly generated)
-        address owner; // Owner of the NFT
     }
 
     // Array to store all NFTs created
@@ -138,8 +137,7 @@ contract NFT is ERC721, Ownable {
             name: _name,
             id: counter,
             level: 1,
-            rarity: _rarity,
-            owner: msg.sender
+            rarity: _rarity
         });
 
         // Mint the NFT and update storage
