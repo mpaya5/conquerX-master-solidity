@@ -33,19 +33,18 @@ Output:
 Path to exit the maze: (1,1), (1,2), ..., (n,m)
 """
 def main(maze, row_start, column_start):
-    # Moves
-    up = (-1, 0)
-    down = (1, 0)
-    left = (0, -1)
-    right = (0, 1)
+    # Moves: Up, Down, Left, Right
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-    def solve_maze(maze, row, column, path=None):
+    def solve_maze(maze, row, col, path, visited):
         pass
-    
 
-    return solve_maze(maze, row_start, column_start)
+    path = []
+    visited = set()
+    return solve_maze(maze, row_start, column_start, path, visited)
 
 
+# Example maze
 maze = [
     [0, 1, 1, 0, 0],
     [0, 1, 0, 1, 0],
@@ -53,3 +52,10 @@ maze = [
     [1, 1, 0, 9, 0],
     [0, 0, 0, 0, 0]
 ]
+
+# Starting at position (0, 0)
+assert(main(maze, 0, 0)==[(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (3, 2), (3,3)])
+# Starting at position (0, 4)
+assert(main(maze, 0, 4)==[(0,4), (1, 4), (2, 4), (3, 4), (3, 3)])
+# Starting at position (0, 3)
+assert(main(maze, 0, 3)==[(0,3), (0,4), (1, 4), (2, 4), (3, 4), (3, 3)])
