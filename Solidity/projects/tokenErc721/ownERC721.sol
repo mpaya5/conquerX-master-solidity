@@ -17,7 +17,7 @@ import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.s
  * @title ERC721 Standard Non-Fungible Token Implementation
  * @dev Implements the ERC721 standard, including metadata and safe transfer functions.
  */
-abstract contract ERC721 is ERC165, IERC721, IERC721Metadata, Context, IERC721Errors {
+abstract contract OwnERC721 is ERC165, IERC721, IERC721Metadata, Context, IERC721Errors {
     using Address for address;
     using Strings for uint256;
 
