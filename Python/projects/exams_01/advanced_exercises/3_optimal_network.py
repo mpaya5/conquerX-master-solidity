@@ -60,3 +60,18 @@ practices.
 Edge Case Handling: The solution should robustly handle various network topologies,
 including large graphs and edge cases like unavailable paths.
 """
+def find_minimum_latency_path(graph:dict, compression_nodes:list, source: str) -> int:
+    pass
+
+graph = {
+'A': [('B', 10), ('C', 20)],
+'B': [('D', 15)],
+'C': [('D', 30)],
+'D': []
+}
+compression_nodes = ['B', 'C']
+source = 'A'
+target = 'D'
+min_latency = find_minimum_latency_path(graph, compression_nodes, source,
+target)
+print(f"Minimum total latency: {min_latency}")

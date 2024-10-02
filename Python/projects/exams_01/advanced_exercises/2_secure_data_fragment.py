@@ -58,15 +58,22 @@ Edge Case Handling: Your solution should be robust, handling edge cases graceful
 (e.g., large numbers of fragments, high-risk factors, etc.).
 """
 
-def calculate_risk(base_risk, fragments):
+def calculate_risk(base_risk: int, fragments:int):
     # A function to calculate the risk
     return base_risk ** fragments
 
-# TODO: We could add a memoization state to be more efficient
-def can_distribute(fragments_left, data_centers, max_risk, assigned_fragments):
+
+def can_distribute(fragments_left:int, data_centers: list, max_risk:int, assigned_fragments:list, memo: tuple) -> bool:
     # No more fragments left to distribute
     if fragments_left == 0:
         return True
+    
+    # Convert the actual state into a memoization key
+    state = (fragments_left, tuple(assigned_fragments))
+    
+    # Verify if we have calculated yet
+    if state in memo:
+        return memo[state]
     
     # Try to asign a fragment to each data center
     for i in range(len(data_centers)):
@@ -75,16 +82,18 @@ def can_distribute(fragments_left, data_centers, max_risk, assigned_fragments):
         current_risk = calculate_risk(data_centers[i], assigned_fragments[i])
 
         # Check if this distribution stays within the allowed max risk
-        if current_risk <= max_risk and can_distribute(fragments_left - 1, data_centers, max_risk, assigned_fragments):
+        if current_risk <= max_risk and can_distribute(fragments_left - 1, data_centers, max_risk, assigned_fragments, memo):
+            memo[state] = True
+            assigned_fragments[i] -= 1
             return True
         
         # Return back the fragment
         assigned_fragments[i] -= 1
         
-
+    memo[state] = False
     return False
 
-def distribute_fragments(data_centers, fragments):
+def distribute_fragments(data_centers: list, fragments: list) -> int:
     # If there are no data centers or no fragments to distribute
     if len(data_centers) == 0 or fragments == 0:
         return 0
@@ -95,10 +104,10 @@ def distribute_fragments(data_centers, fragments):
     
     while low < high:
         mid = (low + high) // 2
-        
         assigned_fragments = [0] * len(data_centers)
+        memo = {}
         
-        if can_distribute(fragments, data_centers, mid, assigned_fragments):
+        if can_distribute(fragments, data_centers, mid, assigned_fragments, memo):
             high = mid
         else:
             low = mid + 1
@@ -107,5 +116,4 @@ def distribute_fragments(data_centers, fragments):
 
 data_centers = [10, 20, 30, 50, 60, 90, 120, 170, 290]
 fragments = 7
-min_risk = distribute_fragments(data_centers, fragments)
-print(f"Minimized maximum risk: {min_risk}")
+assert(distribute_fragments(data_centers, fragments) == 100)
