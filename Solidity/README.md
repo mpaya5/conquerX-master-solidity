@@ -8,41 +8,66 @@ The content is organized as follows:
 ```
 Solidity/ 
 ├── README.md 
-├── exercises/
-├── migrations/
-├── resources/
-├── projects/
-├── scripts/ 
-└── tests/ 
+├── contracts/
+│   ├── exercises/       # Individual exercise solutions
+│   ├── projects/        # Larger project contracts
+│   │   ├── tokenErc20/
+│   │   └── tokenErc721/
+│   └── resources/       # Example contracts and references
+├── scripts/
+│   ├── deploy/         # Deployment scripts
+│   └── interact/       # Contract interaction scripts
+├── test/               # Test files for contracts
+├── resources/          # Documentation and learning materials
+├── hardhat.config.js   # Hardhat configuration
+└── package.json
 ```
 
-- **exercises/**: Solutions to exercises that I've tackled, covering everything from basic syntax to advanced concepts like inheritance, events, and security best practices.
+- **contracts/**: Smart contracts organized by category:
+  - *exercises/*: Solutions to individual exercises
+  - *projects/*: Larger project implementations
+  - *resources/*: Example contracts and references
 
-- **migrations/**: Truffle migration scripts to deploy contracts systematically. These scripts help ensure that everything is deployed in the right order and with the correct settings.
+- **scripts/**: JavaScript scripts for deployment and interaction:
+  - *deploy/*: Scripts for deploying contracts
+  - *interact/*: Scripts for interacting with deployed contracts
 
-- **projects/**: This folder houses larger projects where I've put Solidity to practical use, including end-to-end development, testing, and deployment on test networks.
+- **test/**: Test files ensuring contract functionality and security
 
-- **resources/**: Supplementary materials that I’ve found valuable, including notes, tutorials, and documentation that have been essential in my learning journey.
+- **resources/**: Documentation, tutorials, and learning materials
 
-- **scripts/**: JavaScript scripts designed to interact with deployed contracts, automate tests, and simulate real-world scenarios using Truffle and Ganache.
+## Development Environment
 
-- **tests/**: My test scripts, written in JavaScript and executed with Mocha and Chai, to ensure everything works as expected before deployment.
+I'm using Hardhat as my development environment for a professional and robust workflow. This setup includes:
 
+- **Hardhat**: For compiling, testing, and deploying smart contracts
+- **Hardhat Network**: For local blockchain development
+- **Hardhat Toolbox**: Includes essential plugins for development
+- **OpenZeppelin Contracts**: For secure, tested contract implementations
 
-## Transition to a More Robust Development Process
+## Key Commands
 
-Previously, I relied heavily on Remix for testing and debugging Solidity contracts. However, as the VSCode Remix extension has become somewhat outdated, I've shifted to a more robust and professional workflow using Truffle and Ganache.
+```bash
+# Compile contracts
+npx hardhat compile
 
-This transition isn't just about adopting new tools; it's about embracing a more thorough and professional approach to development. By integrating tests, migrations, and scripts into my projects, I'm ensuring a more comprehensive and reliable development process.
+# Run tests
+npx hardhat test
+
+# Start local node
+npx hardhat node
+
+# Deploy contracts
+npx hardhat run scripts/deploy/<script-name>.js
+```
 
 ## Highlights
 
-- **Thorough Exercise Solutions**: Provided detailed solutions with commentary to reinforce key concepts and practices.
-- **Practical Projects**: Applied Solidity in various projects, including building token contracts and simple decentralized applications.
-- **Emphasis on Testing**: Focused on writing tests to validate the functionality and security of each contract.
-- **Automated Deployment**: Learned to use migration scripts for consistent and reliable contract deployment.
-- **Curated Resources**: Compiled a set of resources essential for mastering Solidity and blockchain development.
-
+- **Thorough Exercise Solutions**: Detailed solutions with commentary
+- **Practical Projects**: Token contracts and decentralized applications
+- **Comprehensive Testing**: Automated tests for contract validation
+- **Deployment Scripts**: Organized deployment process
+- **Curated Resources**: Essential documentation and references
 
 ## Next Steps
 
