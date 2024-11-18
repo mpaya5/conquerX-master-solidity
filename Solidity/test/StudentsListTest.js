@@ -1,61 +1,58 @@
 const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-const StudentsList = artifacts.require("StudentsList");
+describe("StudentsList", function () {
+  let StudentsList;
+  let studentsList;
+  let owner;
+  let student1;
+  let student2;
 
-contract("StudentsList", (accounts) => {
-  const [owner, student1, student2] = accounts;
-
-  it("should add a new student", async () => {
-    const instance = await StudentsList.deployed();
-    await instance.addStudent("Alice", 20, student1, { from: owner });
-
-    const studentData = await instance.getOwnData({ from: student1 });
-
-    assert.equal(studentData.name, "Alice", "Student name mismatch");
-    assert.equal(studentData.age, 20, "Student age mismatch");
-    assert.equal(studentData.studentIdentifier, student1, "Student address mismatch");
+  beforeEach(async function () {
+    [owner, student1, student2] = await ethers.getSigners();
+    StudentsList = await ethers.getContractFactory("StudentsList");
+    studentsList = await StudentsList.deploy();
+    await studentsList.waitForDeployment();
   });
 
-  it("should not add a student with the same address", async () => {
-    const instance = await StudentsList.deployed();
+  it("should add a new student", async function () {
+    await studentsList.connect(owner).addStudent("Alice", 20, student1.address);
+    const studentData = await studentsList.connect(student1).getOwnData();
 
-    // Intentamos agregar el mismo estudiante nuevamente
-    await instance.addStudent("Alice", 20, student1, { from: owner });
-
-    // Verificamos que los datos del estudiante sigan siendo los mismos
-    const studentData = await instance.getOwnData({ from: student1 });
-
-    assert.equal(studentData.name, "Alice", "Student name mismatch");
-    assert.equal(studentData.age, 20, "Student age mismatch");
-    assert.equal(studentData.studentIdentifier, student1, "Student address mismatch");
+    expect(studentData.name).to.equal("Alice");
+    expect(studentData.age).to.equal(20);
+    expect(studentData.studentIdentifier).to.equal(student1.address);
   });
 
-  it("should allow a student to view their own data", async () => {
-    const instance = await StudentsList.deployed();
-    await instance.addStudent("Bob", 22, student2, { from: owner });
+  it("should not add a student with the same address", async function () {
+    await studentsList.connect(owner).addStudent("Alice", 20, student1.address);
+    const studentData = await studentsList.connect(student1).getOwnData();
 
-    const studentData = await instance.getOwnData({ from: student2 });
-
-    assert.equal(studentData.name, "Bob", "Student name mismatch");
-    assert.equal(studentData.age, 22, "Student age mismatch");
-    assert.equal(studentData.studentIdentifier, student2, "Student address mismatch");
+    expect(studentData.name).to.equal("Alice");
+    expect(studentData.age).to.equal(20);
+    expect(studentData.studentIdentifier).to.equal(student1.address);
   });
 
-  it("should allow the owner to view all students' data", async () => {
-    const instance = await StudentsList.deployed();
+  it("should allow a student to view their own data", async function () {
+    await studentsList.connect(owner).addStudent("Bob", 22, student2.address);
+    const studentData = await studentsList.connect(student2).getOwnData();
 
-    const allStudents = await instance.getAllData({ from: owner });
-
-    assert.equal(allStudents.length, 2, "There should be two students registered");
+    expect(studentData.name).to.equal("Bob");
+    expect(studentData.age).to.equal(22);
+    expect(studentData.studentIdentifier).to.equal(student2.address);
   });
 
-  it("should not allow a non-owner to view all students' data", async () => {
-    const instance = await StudentsList.deployed();
-    try {
-      await instance.getAllData({ from: student1 });
-      assert.fail("Non-owner was able to view all students' data");
-    } catch (error) {
-      assert(error.message.includes("You cannot access this data"), "Incorrect error message");
-    }
+  it("should allow the owner to view all students' data", async function () {
+    await studentsList.connect(owner).addStudent("Alice", 20, student1.address);
+    await studentsList.connect(owner).addStudent("Bob", 22, student2.address);
+
+    const allStudents = await studentsList.connect(owner).getAllData();
+    expect(allStudents.length).to.equal(2);
+  });
+
+  it("should not allow a non-owner to view all students' data", async function () {
+    await expect(
+      studentsList.connect(student1).getAllData()
+    ).to.be.revertedWith("You cannot access this data");
   });
 });

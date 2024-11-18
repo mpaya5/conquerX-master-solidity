@@ -1,71 +1,108 @@
 const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-const VendingMachine = artifacts.require("VendingMachine");
+describe("VendingMachine", function () {
+  let VendingMachine;
+  let vendingMachine;
+  let owner;
+  let buyer;
 
-contract("VendingMachine", (accounts) => {
-  const [owner, buyer] = accounts;
-
-  it("should add a new snack", async () => {
-    const instance = await VendingMachine.deployed();
-    await instance.addSnack("Chips", 100, 1, { from: owner });
-
-    const snacks = await instance.getAllSnacks();
-
-    assert.equal(snacks.length, 1, "Snack was not added correctly");
-    assert.equal(snacks[0].name, "Chips", "Snack name mismatch");
+  beforeEach(async function () {
+    [owner, buyer] = await ethers.getSigners();
+    
+    VendingMachine = await ethers.getContractFactory("VendingMachine");
+    vendingMachine = await VendingMachine.deploy();
+    await vendingMachine.waitForDeployment();
   });
 
-  it("should not allow non-owner to add a snack", async () => {
-    const instance = await VendingMachine.deployed();
-    try {
-      await instance.addSnack("Soda", 100, 1, { from: buyer });
-  
-      assert.fail("Non-owner should not be able to add a snack");
-    } catch (error) {
-      assert(error.message.includes("You cannot access this data"), "Incorrect error message");
-    }
-  });
-  
-
-  it("should restock an existing snack", async () => {
-    const instance = await VendingMachine.deployed();
-    await instance.restockSnack(0, 50, { from: owner });
-
-    const snacks = await instance.getAllSnacks();
-
-    assert.equal(snacks[0].quantity, 150, "Snack quantity was not restocked correctly");
+  it("should add a new snack", async function () {
+    await vendingMachine.connect(owner).addSnack("Chips", 10, 1);
+    const snacks = await vendingMachine.getAllSnacks();
+    
+    expect(snacks.length).to.equal(1);
+    expect(snacks[0].name).to.equal("Chips");
+    expect(snacks[0].quantity).to.equal(10);
+    expect(snacks[0].price).to.equal(ethers.parseEther("1"));
   });
 
-  it("should allow a user to buy a snack", async () => {
-    const instance = await VendingMachine.deployed();
-    const initialOwnerBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
-
-    const contractBalanceBefore = new web3.utils.BN(await web3.eth.getBalance(instance.address));
-    console.log("Contract balance before purchase:", contractBalanceBefore.toString());
-
-    await instance.buySnack(0, 1, { from: buyer, value: web3.utils.toWei("1", "ether") });
-
-    const contractBalanceAfter = new web3.utils.BN(await web3.eth.getBalance(instance.address));
-    console.log("Contract balance after purchase:", contractBalanceAfter.toString());
-
-    const snacks = await instance.getAllSnacks();
-    assert.equal(snacks[0].quantity, 149, "Snack quantity did not decrease correctly");
-
-    assert.isTrue(contractBalanceAfter.sub(contractBalanceBefore).eq(web3.utils.toBN(web3.utils.toWei("1", "ether"))), "Contract balance did not increase correctly");
-
-    const finalOwnerBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
-    console.log("Owner balance before:", initialOwnerBalance.toString());
-    console.log("Owner balance after:", finalOwnerBalance.toString());
-
+  it("should not allow non-owner to add snacks", async function () {
+    await expect(
+      vendingMachine.connect(buyer).addSnack("Chips", 10, 1)
+    ).to.be.revertedWith("You cannot access this data");
   });
 
-  it("should allow the owner to withdraw the balance", async () => {
-    const instance = await VendingMachine.deployed();
-    const initialBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
+  it("should restock an existing snack", async function () {
+    await vendingMachine.connect(owner).addSnack("Chips", 10, 1);
+    await vendingMachine.connect(owner).restockSnack(0, 5);
+    
+    const snacks = await vendingMachine.getAllSnacks();
+    expect(snacks[0].quantity).to.equal(15);
+  });
 
-    await instance.withdrawBalance({ from: owner });
+  it("should allow buying snacks", async function () {
+    await vendingMachine.connect(owner).addSnack("Chips", 10, 1);
+    
+    await vendingMachine.connect(buyer).buySnack(0, 2, {
+      value: ethers.parseEther("2")
+    });
 
-    const finalBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
-    assert.isTrue(finalBalance.gt(initialBalance), "Owner's balance did not increase after withdrawal");
+    const snacks = await vendingMachine.getAllSnacks();
+    expect(snacks[0].quantity).to.equal(8);
+  });
+
+  it("should not allow buying with insufficient funds", async function () {
+    await vendingMachine.connect(owner).addSnack("Chips", 10, 1);
+    
+    await expect(
+      vendingMachine.connect(buyer).buySnack(0, 2, {
+        value: ethers.parseEther("0.5")
+      })
+    ).to.be.revertedWith("Insufficient value sent");
+  });
+
+  it("should allow owner to withdraw balance", async function () {
+    await vendingMachine.connect(owner).addSnack("Chips", 10, 1);
+    
+    await vendingMachine.connect(buyer).buySnack(0, 2, {
+      value: ethers.parseEther("2")
+    });
+
+    const initialBalance = await ethers.provider.getBalance(owner.address);
+    
+    await vendingMachine.connect(owner).withdrawBalance();
+    
+    const finalBalance = await ethers.provider.getBalance(owner.address);
+    expect(finalBalance).to.be.gt(initialBalance);
+  });
+
+  it("should not allow non-owner to withdraw balance", async function () {
+    await expect(
+      vendingMachine.connect(buyer).withdrawBalance()
+    ).to.be.revertedWith("You cannot access this data");
+  });
+
+  it("should not add snack with empty name", async function () {
+    await expect(
+      vendingMachine.connect(owner).addSnack("", 10, 1)
+    ).to.be.revertedWith("Null name");
+  });
+
+  it("should not add snack with zero quantity", async function () {
+    await expect(
+      vendingMachine.connect(owner).addSnack("Chips", 0, 1)
+    ).to.be.revertedWith("Quantity cannot be 0 or less than 0");
+  });
+
+  it("should not add snack with zero price", async function () {
+    await expect(
+      vendingMachine.connect(owner).addSnack("Chips", 10, 0)
+    ).to.be.revertedWith("Price cannot be 0 or less than 0");
+  });
+
+  it("should not add duplicate snack", async function () {
+    await vendingMachine.connect(owner).addSnack("Chips", 10, 1);
+    await expect(
+      vendingMachine.connect(owner).addSnack("Chips", 5, 2)
+    ).to.be.revertedWith("Snack already exists");
   });
 });
