@@ -2,23 +2,25 @@
   "name": "solidity",
   "version": "1.0.0",
   "description": "This directory is where I compile all my work related to Solidity, the go-to programming language for creating smart contracts on the Ethereum blockchain.",
-  "main": "truffle.config.js",
+  "main": "hardhat.config.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "node": "npx hardhat node",
+    "deploy": "npx hardhat run scripts/deploy.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/test-helpers": "^0.5.16",
     "chai": "^4.2.0",
+    "hardhat": "^2.22.16",
     "mocha": "^10.7.3"
-  },
-  "dependencies": {
-    "chai-bn": "^0.3.1"
   }
 }
