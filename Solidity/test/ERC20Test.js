@@ -1,63 +1,69 @@
 const { expect } = require('chai');
-const { BN, ether, expectRevert } = require('@openzeppelin/test-helpers');
-const chai = require('chai');
-chai.use(require('chai-bn')(BN));
+const { ethers } = require('hardhat');
 
-const ConquerToken = artifacts.require('ConquerToken');
-const TokenSale = artifacts.require('TokenSale');
-
-contract('ConquerToken and TokenSale', (accounts) => {
-  const [owner, buyer, other] = accounts;
+describe("ConquerToken and TokenSale", function () {
+  let ConquerToken;
+  let TokenSale;
+  let token;
+  let tokenSale;
+  let owner;
+  let buyer;
+  let other;
 
   beforeEach(async function () {
-    this.token = await ConquerToken.new({ from: owner });
-    this.tokenSale = await TokenSale.new(this.token.address, { from: owner });
-  
-    const hasMinterRole = await this.token.hasRole(web3.utils.soliditySha3("MINTER_ROLE"), owner);
+    [owner, buyer, other] = await ethers.getSigners();
+    
+    ConquerToken = await ethers.getContractFactory("ConquerToken");
+    token = await ConquerToken.deploy();
+    await token.waitForDeployment();
+
+    TokenSale = await ethers.getContractFactory("TokenSale");
+    tokenSale = await TokenSale.deploy(await token.getAddress());
+    await tokenSale.waitForDeployment();
+
+    const MINTER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("MINTER_ROLE"));
+    const hasMinterRole = await token.hasRole(MINTER_ROLE, owner.address);
     console.log(`Owner has MINTER_ROLE: ${hasMinterRole}`);
   });
 
-  it('should allow the owner to mint tokens', async function () {
-    await this.token.mintTokens({ from: owner });
-    
-    const balance = await this.token.balanceOf(owner);
+  it("should allow the owner to mint tokens", async function () {
+    await token.connect(owner).mintTokens();
+    const balance = await token.balanceOf(owner.address);
     console.log(`Owner's balance after minting: ${balance.toString()} CNQT`);
-    
-    expect(balance).to.be.a.bignumber.equal(new BN('1000000000000000000000')); // 1000 tokens
+    expect(balance).to.equal(ethers.parseEther("1000"));
   });
 
-  it('should allow the owner to transfer tokens to the TokenSale contract', async function () {
-    await this.token.mintTokens({ from: owner });
+  it("should allow the owner to transfer tokens to the TokenSale contract", async function () {
+    await token.connect(owner).mintTokens();
+    await token.connect(owner).transfer(await tokenSale.getAddress(), ethers.parseEther("1000"));
 
-    await this.token.transfer(this.tokenSale.address, web3.utils.toWei('1000', 'ether'), { from: owner });
+    const ownerBalance = await token.balanceOf(owner.address);
+    expect(ownerBalance).to.equal(0);
 
-    const ownerBalanceAfterTransfer = await this.token.balanceOf(owner);
-    console.log(`Owner's balance after transfer: ${ownerBalanceAfterTransfer.toString()} CNQT`);
-    expect(ownerBalanceAfterTransfer).to.be.a.bignumber.equal(new BN('0')); // El balance debería ser 0 después de la transferencia
-
-    const saleBalance = await this.token.balanceOf(this.tokenSale.address);
-    console.log(`TokenSale contract balance after transfer: ${saleBalance.toString()} CNQT`);
-    expect(saleBalance).to.be.a.bignumber.equal(new BN('1000000000000000000000')); // 1000 tokens
+    const saleBalance = await token.balanceOf(await tokenSale.getAddress());
+    expect(saleBalance).to.equal(ethers.parseEther("1000"));
   });
 
-  it('should allow buyers to purchase tokens', async function () {
-    await this.token.mintTokens({ from: owner });
-    await this.token.transfer(this.tokenSale.address, web3.utils.toWei('1000', 'ether'), { from: owner });
+  it("should allow buyers to purchase tokens", async function () {
+    await token.connect(owner).mintTokens();
+    await token.connect(owner).transfer(await tokenSale.getAddress(), ethers.parseEther("1000"));
 
-    const saleBalance = await this.token.balanceOf(this.tokenSale.address);
-    console.log(`TokenSale contract balance: ${saleBalance.toString()} CNQT`);
-  
-    await this.tokenSale.purchase(1,{ from: buyer, value: ether('1') });
-  
-    const buyerBalance = await this.token.balanceOf(buyer);
-    console.log(`Buyer's token balance: ${buyerBalance.toString()} CNQT`);
-    expect(buyerBalance).to.be.a.bignumber.equal(new BN('1000000000000000000')); // 1 token
+    await tokenSale.connect(buyer).purchase(1, { 
+      value: ethers.parseEther("1") 
+    });
+
+    const buyerBalance = await token.balanceOf(buyer.address);
+    expect(buyerBalance).to.equal(ethers.parseEther("1"));
   });
 
-  it('should revert purchase if not enough Ether is sent', async function () {
-    await expectRevert(
-      this.tokenSale.purchase(1,{ from: buyer, value: ether('0.5') }),
-      'Not enough money'
-    );
+  it("should revert purchase if not enough Ether is sent", async function () {
+    await token.connect(owner).mintTokens();
+    await token.connect(owner).transfer(await tokenSale.getAddress(), ethers.parseEther("1000"));
+
+    await expect(
+      tokenSale.connect(buyer).purchase(1, { 
+        value: ethers.parseEther("0.5") 
+      })
+    ).to.be.revertedWith("Not enough money");
   });
 });

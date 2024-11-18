@@ -33,6 +33,9 @@ contract Bank {
     // Event to log transfers between accounts
     event Transfer(address _from, address _to, uint _amount);
 
+    // Error for insufficient funds
+    error InsufficientFunds(uint256 available, uint256 required);
+
     /**
      * @dev Adds balance to the caller's account.
      * @param _amount The amount to add to the balance.
@@ -63,13 +66,17 @@ contract Bank {
      * - If the sender has insufficient balance, the function returns without making the transfer.
      */
     function transferBalancePrivate(address _sender, address _receiver, uint256 _amount) private {
-        if (bank_accounts[_sender].balance < _amount) {
-            return; // Abort the transfer if the sender doesn't have enough balance
-        } else {
-            bank_accounts[_sender].balance -= _amount;
-            bank_accounts[_receiver].balance += _amount;
-            emit Transfer(_sender, _receiver, _amount);
+        uint256 senderBalance = bank_accounts[_sender].balance;
+        if (senderBalance < _amount) {
+            revert InsufficientFunds({
+                available: senderBalance,
+                required: _amount
+            });
         }
+        
+        bank_accounts[_sender].balance -= _amount;
+        bank_accounts[_receiver].balance += _amount;
+        emit Transfer(_sender, _receiver, _amount);
     }
 
     /**

@@ -1,36 +1,73 @@
-const Bank = artifacts.require("Bank");
+const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
-module.exports = async function(callback) {
+async function main() {
   try {
-    const accounts = await web3.eth.getAccounts();
-    const account1 = accounts[0];
-    const account2 = accounts[1];
+    console.log("Starting Bank interaction simulation...\n");
 
-    const instance = await Bank.deployed();
+    // Get signers
+    const [account1, account2] = await ethers.getSigners();
+    console.log("Account 1 address:", account1.address);
+    console.log("Account 2 address:", account2.address);
 
-    console.log("Adding balance to account 1...");
-    await instance.addBalance(100, { from: account1 });
-    console.log("Balance added to account 1.");
+    // Deploy contract
+    const Bank = await ethers.getContractFactory("Bank");
+    const bank = await Bank.deploy();
+    await bank.waitForDeployment();
+    console.log("\nBank deployed to:", await bank.getAddress());
 
-    console.log("Getting balance for account 1...");
-    let balance = await instance.getBalance({ from: account1 });
+    // Add balance to account 1
+    console.log("\nAdding balance to account 1...");
+    const addTx = await bank.connect(account1).addBalance(100);
+    await addTx.wait();
+    console.log("Balance added to account 1");
+
+    // Get balance for account 1
+    console.log("\nGetting balance for account 1...");
+    let balance = await bank.connect(account1).getBalance();
     console.log("Account 1 balance:", balance.toString());
 
-    console.log("Transferring balance from account 1 to account 2...");
-    await instance.transferBalance(account2, 50, { from: account1 });
-    console.log("Transfer complete.");
+    // Transfer balance from account 1 to account 2
+    console.log("\nTransferring balance from account 1 to account 2...");
+    const transferTx = await bank.connect(account1).transferBalance(account2.address, 50);
+    await transferTx.wait();
+    console.log("Transfer complete");
 
-    console.log("Getting balance for account 1...");
-    balance = await instance.getBalance({ from: account1 });
+    // Get updated balances
+    console.log("\nGetting updated balances...");
+    
+    balance = await bank.connect(account1).getBalance();
     console.log("Account 1 balance:", balance.toString());
 
-    console.log("Getting balance for account 2...");
-    balance = await instance.getBalance({ from: account2 });
+    balance = await bank.connect(account2).getBalance();
     console.log("Account 2 balance:", balance.toString());
 
-    callback();
+    // Try to transfer more than available balance (should fail)
+    console.log("\nTrying to transfer more than available balance...");
+    try {
+      await bank.connect(account1).transferBalance(account2.address, 1000);
+    } catch (error) {
+      console.log("Error caught successfully:", error.message);
+    }
+
+    // Try to transfer with zero balance (should fail)
+    console.log("\nTrying to transfer with zero balance from account 2...");
+    try {
+      await bank.connect(account2).transferBalance(account1.address, 100);
+    } catch (error) {
+      console.log("Error caught successfully:", error.message);
+    }
+
+    console.log("\nSimulation completed successfully!");
+
   } catch (error) {
-    console.error("Error during interaction with Bank contract:", error);
-    callback(error);
+    console.error("\nError in simulation:", error);
+    process.exitCode = 1;
   }
-};
+}
+
+// Execute simulation
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

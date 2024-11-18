@@ -26,8 +26,11 @@ contract NFT is ERC721, Ownable {
     // Array to store all NFTs created
     Nft[] public nfts;
 
-    // Mapping from owner to the list of their NFTs
-    mapping(address => Nft[]) private _ownerNfts;
+    // Mapping from token ID to NFT data
+    mapping(uint256 => Nft) private _tokenData;
+
+    // Mapping from owner to their token IDs
+    mapping(address => uint256[]) private _ownerTokenIds;
 
     // Event triggered when a new NFT is minted
     event NewNFT(address owner, uint256 id, string name);
@@ -71,7 +74,14 @@ contract NFT is ERC721, Ownable {
      * @return An array of NFTs owned by the given address.
      */
     function getNftsByOwner(address _owner) public view returns (Nft[] memory) {
-        return _ownerNfts[_owner];
+        uint256[] memory tokenIds = _ownerTokenIds[_owner];
+        Nft[] memory ownerNfts = new Nft[](tokenIds.length);
+        
+        for (uint i = 0; i < tokenIds.length; i++) {
+            ownerNfts[i] = _tokenData[tokenIds[i]];
+        }
+        
+        return ownerNfts;
     }
 
     /**
@@ -95,13 +105,14 @@ contract NFT is ERC721, Ownable {
      * @param _id The ID of the NFT to level up.
      */
     function levelUp(uint256 _id) public payable {
-        require(msg.value >= price, "Insufficient money");
+        require(msg.value >= priceLevelUp, "Insufficient money");
         require(ownerOf(_id) == msg.sender, "You have not enough permissions");
 
-        nfts[_id].level ++;
+        // Update level in token data
+        _tokenData[_id].level++;
 
-        if (msg.value > price) {
-            payable(msg.sender).transfer(msg.value - price); // Return the excess
+        if (msg.value > priceLevelUp) {
+            payable(msg.sender).transfer(msg.value - priceLevelUp);
         }
     }
 
@@ -140,10 +151,12 @@ contract NFT is ERC721, Ownable {
             rarity: _rarity
         });
 
-        // Mint the NFT and update storage
+        // Store NFT data
+        _tokenData[counter] = newToken;
+        _ownerTokenIds[msg.sender].push(counter);
+
+        // Mint the NFT
         _safeMint(msg.sender, counter);
-        _ownerNfts[msg.sender].push(newToken);  // Store NFT in the owner's list
-        nfts.push(newToken);                    // Add to the global list of NFTs
 
         emit NewNFT(msg.sender, counter, _name);
         counter++;

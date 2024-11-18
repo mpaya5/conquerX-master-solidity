@@ -1,45 +1,43 @@
 const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-const Bank = artifacts.require("Bank");
+describe("Bank", function () {
+  let Bank;
+  let bank;
+  let owner;
+  let account1;
+  let account2;
 
-contract("Bank", (accounts) => {
-  const [account1, account2] = accounts;
-
-  it("should add balance to an account", async () => {
-    const instance = await Bank.deployed();
-    await instance.addBalance(100, { from: account1 });
-
-    const balance = await instance.getBalance({ from: account1 });
-    expect(balance.toString()).to.equal("100", "Balance was not added correctly");
+  beforeEach(async function () {
+    [owner, account1, account2] = await ethers.getSigners();
+    Bank = await ethers.getContractFactory("Bank");
+    bank = await Bank.deploy();
+    await bank.waitForDeployment();
   });
 
-  it("should transfer balance between accounts", async () => {
-    const instance = await Bank.deployed();
-    await instance.transferBalance(account2, 50, { from: account1 });
-
-    const balance1 = await instance.getBalance({ from: account1 });
-    expect(balance1.toString()).to.equal("50", "Balance was not deducted correctly from account 1");
-
-    const balance2 = await instance.getBalance({ from: account2 });
-    expect(balance2.toString()).to.equal("50", "Balance was not credited correctly to account 2");
+  it("should add balance to an account", async function () {
+    await bank.connect(account1).addBalance(100);
+    const balance = await bank.connect(account1).getBalance();
+    expect(balance.toString()).to.equal("100");
   });
 
-  it("should not transfer balance if sender has insufficient funds", async () => {
-    const instance = await Bank.deployed();
-    const initialBalance1 = await instance.getBalance({ from: account1 });
-    const initialBalance2 = await instance.getBalance({ from: account2 });
+  it("should transfer balance between accounts", async function () {
+    await bank.connect(account1).addBalance(100);
+    await bank.connect(account1).transferBalance(account2.address, 50);
 
-    try {
-      await instance.transferBalance(account2, 100, { from: account1 });
-      assert.fail("Expected an error but did not get one");
-    } catch (error) {
-      expect(error.reason).to.equal(undefined, "Expected revert due to insufficient funds");
-    }
+    const balance1 = await bank.connect(account1).getBalance();
+    expect(balance1.toString()).to.equal("50");
 
-    const finalBalance1 = await instance.getBalance({ from: account1 });
-    const finalBalance2 = await instance.getBalance({ from: account2 });
+    const balance2 = await bank.connect(account2).getBalance();
+    expect(balance2.toString()).to.equal("50");
+  });
 
-    expect(finalBalance1.toString()).to.equal(initialBalance1.toString(), "Balance of account 1 should not change");
-    expect(finalBalance2.toString()).to.equal(initialBalance2.toString(), "Balance of account 2 should not change");
+  it("should not transfer balance if sender has insufficient funds", async function () {
+    await bank.connect(account1).addBalance(50);
+    
+    await expect(
+      bank.connect(account1).transferBalance(account2.address, 100)
+    ).to.be.revertedWithCustomError(bank, "InsufficientFunds")
+      .withArgs(50, 100);
   });
 });

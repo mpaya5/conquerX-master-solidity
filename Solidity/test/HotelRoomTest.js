@@ -1,28 +1,79 @@
 const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-const HotelRoom = artifacts.require('HotelRoom');
+describe("HotelRoom", function () {
+  let HotelRoom;
+  let hotelRoom;
+  let owner;
+  let client;
 
-contract("HotelRoom", (accounts) => {
-    const [owner, client] = accounts;
+  beforeEach(async function () {
+    [owner, client] = await ethers.getSigners();
+    
+    // Deploy contract
+    HotelRoom = await ethers.getContractFactory("HotelRoom");
+    hotelRoom = await HotelRoom.deploy();
+    await hotelRoom.waitForDeployment();
+  });
 
-    it("should be the room with status vacant", async () => {
-        const instance = await HotelRoom.deployed();
-        const currentRoomStatus = await instance.currentRoomStatus();
+  it("should be the room with status vacant", async function () {
+    const currentRoomStatus = await hotelRoom.currentRoomStatus();
+    expect(currentRoomStatus).to.equal(1); // VACANT = 1
+  });
 
-        assert.equal(currentRoomStatus.toString(), '1', "The room should be VACANT (1)");
+  it("should book the room and withdraw the balance", async function () {
+    const initialOwnerBalance = await ethers.provider.getBalance(owner.address);
+
+    // Book room
+    await hotelRoom.connect(client).bookRoom({ 
+      value: ethers.parseEther("1") 
     });
 
-    it("should book the room and withdraw the balance", async () => {
-        const instance = await HotelRoom.deployed();
-        const initialOwnerBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
+    // Check room status
+    const currentRoomStatus = await hotelRoom.currentRoomStatus();
+    expect(currentRoomStatus).to.equal(0); // OCCUPIED = 0
 
-        await instance.bookRoom({ from: client, value: web3.utils.toWei("1", "ether") });
+    // Check owner received payment
+    const finalOwnerBalance = await ethers.provider.getBalance(owner.address);
+    expect(finalOwnerBalance).to.be.gt(initialOwnerBalance);
+  });
 
-        const currentRoomStatus = await instance.currentRoomStatus();
-        assert.equal(currentRoomStatus.toString(), '0', "The room should be OCCUPIED (0)");
+  it("should not allow booking if insufficient value sent", async function () {
+    await expect(
+      hotelRoom.connect(client).bookRoom({ 
+        value: ethers.parseEther("0.5") 
+      })
+    ).to.be.revertedWith("Insufficient value sent");
+  });
 
-        const finalOwnerBalance = new web3.utils.BN(await web3.eth.getBalance(owner));
-
-        assert.isTrue(finalOwnerBalance.gt(initialOwnerBalance), "The owner should have more balance after the room was booked");
+  it("should not allow booking if room is occupied", async function () {
+    // First booking
+    await hotelRoom.connect(client).bookRoom({ 
+      value: ethers.parseEther("1") 
     });
+
+    // Second booking should fail
+    await expect(
+      hotelRoom.connect(client).bookRoom({ 
+        value: ethers.parseEther("1") 
+      })
+    ).to.be.revertedWith("The room is occupied");
+  });
+
+  it("should allow only owner to free the room", async function () {
+    // Book room first
+    await hotelRoom.connect(client).bookRoom({ 
+      value: ethers.parseEther("1") 
+    });
+
+    // Client tries to free room
+    await expect(
+      hotelRoom.connect(client).freeRoom()
+    ).to.be.revertedWith("You cannot access this data");
+
+    // Owner frees room
+    await hotelRoom.connect(owner).freeRoom();
+    const currentRoomStatus = await hotelRoom.currentRoomStatus();
+    expect(currentRoomStatus).to.equal(1); // VACANT = 1
+  });
 });
