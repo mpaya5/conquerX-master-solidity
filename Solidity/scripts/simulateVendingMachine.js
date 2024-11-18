@@ -1,42 +1,114 @@
-const VendingMachine = artifacts.require("VendingMachine");
+const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
-module.exports = async function(callback) {
+async function main() {
   try {
-    const accounts = await web3.eth.getAccounts();
-    const owner = accounts[0];
-    const buyer = accounts[1];
+    console.log("Starting VendingMachine simulation...\n");
 
-    const instance = await VendingMachine.deployed();
+    // Get signers
+    const [owner, buyer] = await ethers.getSigners();
+    console.log("Owner address:", owner.address);
+    console.log("Buyer address:", buyer.address);
 
-    console.log("Adding new snack...");
-    await instance.addSnack("Soda", 100, 1, { from: owner });
+    // Deploy contract
+    const VendingMachine = await ethers.getContractFactory("VendingMachine");
+    const vendingMachine = await VendingMachine.deploy();
+    await vendingMachine.waitForDeployment();
+    console.log("VendingMachine deployed to:", await vendingMachine.getAddress(), "\n");
 
-    console.log("Getting all the snacks...");
-    allSnacks = await instance.getAllSnacks();
-    console.log(allSnacks);
+    // Add snacks (usando precios enteros)
+    console.log("Adding snacks...");
+    const snacks = [
+      { name: "Soda", quantity: 100, price: 1 },
+      { name: "Chips", quantity: 50, price: 2 },
+      { name: "Chocolate", quantity: 75, price: 2 }  // Cambiado de 1.5 a 2
+    ];
 
-    console.log("Restocking snack...");
-    await instance.restockSnack(0, 50, { from: owner });
-    console.log("Snack reestocked:")
-    allSnacks = await instance.getAllSnacks()
-    console.log("Now Soda has just: " + allSnacks[0].quantity + " quantity");
+    for (const snack of snacks) {
+      const tx = await vendingMachine.connect(owner).addSnack(
+        snack.name, 
+        snack.quantity, 
+        snack.price
+      );
+      await tx.wait();
+      console.log(`Added ${snack.name} - Quantity: ${snack.quantity}, Price: ${snack.price} ETH`);
+    }
 
-    console.log("Buying a snack...");
-    await instance.buySnack(0, 1, { from: buyer, value: web3.utils.toWei("1", "ether") });
-    allSnacks = await instance.getAllSnacks()
-    snack = allSnacks[0];
-    console.log("Now there are just " + snack.quantity + " of " + snack.name + " left");
+    // Display initial inventory
+    console.log("\nInitial Inventory:");
+    const initialSnacks = await vendingMachine.getAllSnacks();
+    displaySnacks(initialSnacks);
 
-    console.log("Withdrawing balance...");
-    await instance.withdrawBalance({ from: owner });
+    // Restock a snack
+    console.log("\nRestocking Soda...");
+    await vendingMachine.connect(owner).restockSnack(0, 50);
+    console.log("Restocked 50 more Sodas");
 
-    const ownerBalance = await web3.eth.getBalance(owner);
-    console.log("Now the owner has that amount: " + web3.utils.fromWei(ownerBalance, 'ether') + " ETH");
+    // Buy snacks
+    console.log("\nBuying snacks...");
+    const buyerInitialBalance = await ethers.provider.getBalance(buyer.address);
+    console.log("Buyer initial balance:", ethers.formatEther(buyerInitialBalance), "ETH");
 
-    console.log("Simulation completed successfully.");
-    callback();
+    // Buy multiple snacks (usando valores enteros)
+    const purchases = [
+      { id: 0, amount: 2, value: "2" },  // 2 Sodas
+      { id: 1, amount: 1, value: "2" },  // 1 Chips
+      { id: 2, amount: 2, value: "4" }   // 2 Chocolates
+    ];
+
+    for (const purchase of purchases) {
+      try {
+        const tx = await vendingMachine.connect(buyer).buySnack(
+          purchase.id, 
+          purchase.amount, 
+          { value: ethers.parseEther(purchase.value) }
+        );
+        await tx.wait();
+        const snack = (await vendingMachine.getAllSnacks())[purchase.id];
+        console.log(`Bought ${purchase.amount} ${snack.name}(s) for ${purchase.value} ETH`);
+      } catch (error) {
+        console.error(`Failed to buy snack ${purchase.id}:`, error.message);
+      }
+    }
+
+    // Check machine balance
+    const machineBalance = await vendingMachine.connect(owner).getMachineBalance();
+    console.log("\nVending Machine balance:", ethers.formatEther(machineBalance), "ETH");
+
+    // Withdraw balance
+    console.log("\nWithdrawing balance...");
+    const ownerInitialBalance = await ethers.provider.getBalance(owner.address);
+    
+    const withdrawTx = await vendingMachine.connect(owner).withdrawBalance();
+    await withdrawTx.wait();
+
+    const ownerFinalBalance = await ethers.provider.getBalance(owner.address);
+    console.log("Owner balance change:", 
+      ethers.formatEther(ownerFinalBalance - ownerInitialBalance), "ETH");
+
+    // Display final inventory
+    console.log("\nFinal Inventory:");
+    const finalSnacks = await vendingMachine.getAllSnacks();
+    displaySnacks(finalSnacks);
+
+    console.log("\nSimulation completed successfully!");
+
   } catch (error) {
-    console.error("Error during simulation:", error);
-    callback(error);
+    console.error("\nError in simulation:", error);
+    process.exitCode = 1;
   }
-};
+}
+
+function displaySnacks(snacks) {
+  snacks.forEach((snack, index) => {
+    console.log(`${index}. ${snack.name}:`);
+    console.log(`   Quantity: ${snack.quantity}`);
+    console.log(`   Price: ${ethers.formatEther(snack.price)} ETH`);
+  });
+}
+
+// Execute simulation
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
